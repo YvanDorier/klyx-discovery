@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KLYX — Questionnaire Discovery PME</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
+    
+    <style>
+        /* ═══════════════════════════════════════════════════════════════
+           KLYX BRAND COLORS
+           ═══════════════════════════════════════════════════════════════ */
+        :root {
+            --klyx-green-light: #4ADE80;
+            --klyx-green-mid: #22C55E;
+            --klyx-green-dark: #16A34A;
+            --klyx-black: #0A0A0B;
+            --klyx-white: #FFFFFF;
+            --gray-50: #FAFAFA;
+            --gray-100: #F4F4F5;
+            --gray-200: #E4E4E7;
+            --gray-300: #D4D4D8;
+            --gray-400: #A1A1AA;
+            --gray-500: #71717A;
+            --gray-600: #52525B;
+            --gray-700: #3F3F46;
+            --gray-800: #27272A;
+            --gray-900: #18181B;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--klyx-black);
+            color: var(--klyx-white);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           LOGO KLYX
+           ═══════════════════════════════════════════════════════════════ */
+        .logo-container {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .logo-svg {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .logo-wordmark {
+            font-size: 1.25rem;
+            font-weight: 500;
+            letter-spacing: 0.18em;
+            line-height: 1;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           PROGRESS BAR
+           ═══════════════════════════════════════════════════════════════ */
+        .progress-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gray-900);
+            z-index: 99;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--klyx-green-light), var(--klyx-green-mid), var(--klyx-green-dark));
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .progress-text {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            color: var(--gray-500);
+            letter-spacing: 0.1em;
+            z-index: 100;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           CONTAINER & SCREEN
+           ═══════════════════════════════════════════════════════════════ */
+        .form-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 140px 24px 60px;
+        }
+        
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 680px;
+            animation: fadeIn 0.4s ease;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           WELCOME SCREEN
+           ═══════════════════════════════════════════════════════════════ */
+        .welcome-content {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .welcome-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 16px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .welcome-title {
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: -0.01em;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+        
+        .welcome-text {
+            font-size: 0.95rem;
+            color: var(--gray-400);
+            line-height: 1.7;
+            margin-bottom: 40px;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           QUESTION STYLES
+           ═══════════════════════════════════════════════════════════════ */
+        .question-label {
+            font-size: 1.4rem;
+            font-weight: 400;
+            line-height: 1.4;
+            margin-bottom: 32px;
+            color: var(--klyx-white);
+        }
+        
+        .question-sublabel {
+            font-size: 0.85rem;
+            color: var(--gray-400);
+            margin-top: 8px;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           BUTTONS
+           ═══════════════════════════════════════════════════════════════ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 32px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.01em;
+        }
+        
+        .btn-primary {
+            background: var(--klyx-green-mid);
+            color: var(--klyx-black);
+        }
+        
+        .btn-primary:hover {
+            background: var(--klyx-green-light);
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: var(--gray-800);
+            color: var(--klyx-white);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--gray-700);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--gray-700);
+            color: var(--klyx-white);
+        }
+        
+        .btn-outline:hover {
+            border-color: var(--klyx-green-mid);
+            color: var(--klyx-green-mid);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           OPTION CARDS (pour choix unique/multiple)
+           ═══════════════════════════════════════════════════════════════ */
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        
+        .option-card {
+            position: relative;
+            padding: 18px 20px;
+            background: var(--gray-900);
+            border: 2px solid var(--gray-800);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .option-card:hover {
+            border-color: var(--gray-700);
+            background: var(--gray-800);
+        }
+        
+        .option-card.selected {
+            border-color: var(--klyx-green-mid);
+            background: rgba(34, 197, 94, 0.08);
+        }
+        
+        .option-card input[type="radio"],
+        .option-card input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--klyx-green-mid);
+            cursor: pointer;
+        }
+        
+        .option-card label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: var(--klyx-white);
+        }
+        
+        .option-subinput {
+            width: 100%;
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: var(--gray-800);
+            border: 1px solid var(--gray-700);
+            border-radius: 8px;
+            color: var(--klyx-white);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+        }
+        
+        .option-subinput:focus {
+            outline: none;
+            border-color: var(--klyx-green-mid);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           TEXT INPUT & TEXTAREA
+           ═══════════════════════════════════════════════════════════════ */
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 32px;
+        }
+        
+        .text-input,
+        .textarea-input {
+            width: 100%;
+            padding: 16px 18px;
+            background: var(--gray-900);
+            border: 2px solid var(--gray-800);
+            border-radius: 12px;
+            color: var(--klyx-white);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        
+        .textarea-input {
+            min-height: 140px;
+            resize: vertical;
+        }
+        
+        .text-input:focus,
+        .textarea-input:focus {
+            outline: none;
+            border-color: var(--klyx-green-mid);
+            background: var(--gray-800);
+        }
+        
+        /* Phone input group */
+        .phone-input-group {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .phone-input-group input {
+            padding: 16px 18px;
+            background: var(--gray-900);
+            border: 2px solid var(--gray-800);
+            border-radius: 12px;
+            color: var(--klyx-white);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        
+        .phone-input-group input:focus {
+            outline: none;
+            border-color: var(--klyx-green-mid);
+            background: var(--gray-800);
+        }
+        
+        .phone-input-label {
+            font-size: 0.85rem;
+            color: var(--gray-400);
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        /* Voice button */
+        /* Voice dictation tip */
+        .voice-tip {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            margin-top: 8px;
+            margin-bottom: 16px;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           SCALE / SLIDER
+           ═══════════════════════════════════════════════════════════════ */
+        .scale-container {
+            margin-bottom: 32px;
+        }
+        
+        .scale-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .scale-option {
+            padding: 16px 18px;
+            background: var(--gray-900);
+            border: 2px solid var(--gray-800);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .scale-option:hover {
+            border-color: var(--gray-700);
+        }
+        
+        .scale-option.selected {
+            border-color: var(--klyx-green-mid);
+            background: rgba(34, 197, 94, 0.08);
+        }
+        
+        .scale-option input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--klyx-green-mid);
+        }
+        
+        .scale-option label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           RANKING (Drag & Drop)
+           ═══════════════════════════════════════════════════════════════ */
+        .ranking-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        
+        .ranking-item {
+            padding: 16px;
+            background: var(--gray-900);
+            border: 2px solid var(--gray-800);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .ranking-item:hover {
+            border-color: var(--gray-700);
+        }
+        
+        .ranking-number {
+            min-width: 32px;
+            height: 32px;
+            background: var(--klyx-green-mid);
+            color: var(--klyx-black);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        
+        .ranking-text {
+            flex: 1;
+            font-size: 0.9rem;
+            color: var(--klyx-white);
+        }
+        
+        .ranking-controls {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        
+        .ranking-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gray-800);
+            border: none;
+            border-radius: 8px;
+            color: var(--klyx-white);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+        
+        .ranking-btn:hover:not(:disabled) {
+            background: var(--gray-700);
+        }
+        
+        .ranking-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           INFO SCREEN (Présentation concept)
+           ═══════════════════════════════════════════════════════════════ */
+        .info-content {
+            background: var(--gray-900);
+            border: 1px solid var(--gray-800);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+        }
+        
+        .info-title {
+            font-size: 1.6rem;
+            font-weight: 500;
+            margin-bottom: 24px;
+            color: var(--klyx-green-mid);
+        }
+        
+        .info-text {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--gray-300);
+            margin-bottom: 20px;
+        }
+        
+        .info-text strong {
+            color: var(--klyx-white);
+            font-weight: 600;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           NAVIGATION BUTTONS
+           ═══════════════════════════════════════════════════════════════ */
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+        
+        .btn-back {
+            flex: 1;
+        }
+        
+        .btn-next,
+        .btn-submit {
+            flex: 2;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           THANK YOU SCREEN
+           ═══════════════════════════════════════════════════════════════ */
+        .thank-you-content {
+            text-align: center;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .thank-you-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            color: var(--klyx-green-mid);
+        }
+        
+        .thank-you-title {
+            font-size: 2rem;
+            font-weight: 400;
+            margin-bottom: 16px;
+        }
+        
+        .thank-you-text {
+            font-size: 0.95rem;
+            color: var(--gray-400);
+            line-height: 1.7;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           RESPONSIVE
+           ═══════════════════════════════════════════════════════════════ */
+        @media (max-width: 640px) {
+            .logo-container {
+                top: 16px;
+            }
+            
+            .logo-svg {
+                width: 32px;
+                height: 32px;
+            }
+            
+            .logo-wordmark {
+                font-size: 1rem;
+            }
+            
+            .progress-text {
+                top: 90px;
+                font-size: 0.65rem;
+            }
+            
+            .form-container {
+                padding: 120px 20px 40px;
+            }
+            
+            .welcome-title,
+            .thank-you-title {
+                font-size: 1.5rem;
+            }
+            
+            .question-label {
+                font-size: 1.2rem;
+            }
+            
+            .info-content {
+                padding: 24px;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+            }
+            
+            .btn-back,
+            .btn-next,
+            .btn-submit {
+                flex: 1;
+            }
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           LOADING SPINNER
+           ═══════════════════════════════════════════════════════════════ */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 10, 11, 0.95);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading-overlay.active {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--gray-800);
+            border-top-color: var(--klyx-green-mid);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Resume Modal */
+        .resume-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 10, 11, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+        }
+        
+        .resume-modal.active {
+            display: flex;
+        }
+        
+        .resume-content {
+            background: var(--gray-900);
+            border: 2px solid var(--gray-800);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .resume-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+        
+        .resume-text {
+            font-size: 0.9rem;
+            color: var(--gray-400);
+            margin-bottom: 24px;
+        }
+        
+        .resume-buttons {
+            display: flex;
+            gap: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Progress Bar -->
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+    
+    <!-- Logo -->
+    <div class="logo-container">
+        <svg class="logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Chevron gauche (clair) - pointe vers la gauche -->
+            <path d="M35 20L15 50L35 80" stroke="#4ADE80" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Chevron milieu (mid - référence) -->
+            <path d="M60 20L40 50L60 80" stroke="#22C55E" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Chevron droite (foncé) -->
+            <path d="M85 20L65 50L85 80" stroke="#16A34A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="logo-wordmark">KLYX</div>
+    </div>
+    
+    <!-- Progress Text -->
+    <div class="progress-text" id="progressText">QUESTION 1 SUR 25</div>
+    
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- Resume Modal -->
+    <div class="resume-modal" id="resumeModal">
+        <div class="resume-content">
+            <h3 class="resume-title">Reprendre où vous en étiez ?</h3>
+            <p class="resume-text">Nous avons retrouvé vos réponses précédentes. Voulez-vous continuer ou recommencer ?</p>
+            <div class="resume-buttons">
+                <button class="btn btn-secondary" onclick="startFresh()" style="flex: 1;">Recommencer</button>
+                <button class="btn btn-primary" onclick="resumeProgress()" style="flex: 1;">Continuer</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Form Container -->
+    <div class="form-container" id="formContainer">
+        <!-- SCREEN 0: Welcome -->
+        <div class="screen active" data-screen="0">
+            <div class="welcome-content">
+                <svg class="welcome-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M35 20L15 50L35 80" stroke="#4ADE80" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M60 20L40 50L60 80" stroke="#22C55E" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M85 20L65 50L85 80" stroke="#16A34A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h1 class="welcome-title">Questionnaire Discovery PME</h1>
+                <p class="welcome-text">
+                    Ce questionnaire fait partie d'un projet de recherche sur la productivité des dirigeants et managers de PME. 
+                    Vos réponses nous aideront à concevoir un outil réellement utile.
+                    <br><br>
+                    <strong>Durée : 10-15 minutes.</strong>
+                    <br><br>
+                    Il n'y a pas de bonne ou mauvaise réponse — c'est votre réalité quotidienne qui nous intéresse, pas la version idéale.
+                </p>
+                <button class="btn btn-primary" onclick="nextScreen()">Commencer</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 1: Infos Prospect (NOUVEAU) -->
+        <div class="screen" data-screen="1">
+            <h2 class="question-label">Pour commencer, pouvez-vous nous partager vos coordonnées ?</h2>
+            
+            <input type="text" class="text-input" id="prenom" placeholder="Prénom">
+            
+            <input type="text" class="text-input" id="nom" placeholder="Nom">
+            
+            <input type="email" class="text-input" id="email" placeholder="Email">
+            
+            <span class="phone-input-label">Numéro WhatsApp</span>
+            <div class="phone-input-group">
+                <input type="text" id="country-code" value="225" placeholder="Code">
+                <input type="tel" id="whatsapp" placeholder="XX XX XX XX XX">
+            </div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 2: Q1 - Poste et secteur -->
+        <div class="screen" data-screen="2">
+            <h2 class="question-label">Quel est votre poste et dans quel secteur d'activité ?</h2>
+            <div class="input-wrapper">
+                <textarea class="textarea-input" id="q1" placeholder="Ex: Directeur Général d'une entreprise de BTP..."></textarea>
+                <p class="voice-tip">💡 Astuce : Utilisez la dictée vocale de votre clavier (icône micro 🎤)</p>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 2: Q2 - Taille entreprise -->
+        <div class="screen" data-screen="3">
+            <h2 class="question-label">Combien de personnes dans votre entreprise / votre département ?</h2>
+            <div class="options-grid">
+                <div class="option-card" onclick="selectOption('q2', 'moins-10')">
+                    <input type="radio" name="q2" value="moins-10" id="q2-1">
+                    <label for="q2-1">Moins de 10</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q2', '10-30')">
+                    <input type="radio" name="q2" value="10-30" id="q2-2">
+                    <label for="q2-2">10-30</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q2', '30-100')">
+                    <input type="radio" name="q2" value="30-100" id="q2-3">
+                    <label for="q2-3">30-100</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q2', 'plus-100')">
+                    <input type="radio" name="q2" value="plus-100" id="q2-4">
+                    <label for="q2-4">Plus de 100</label>
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 3: Q3 - Outils digitaux (multiple avec subfields) -->
+        <div class="screen" data-screen="4">
+            <h2 class="question-label">Quels outils digitaux utilisez-vous au quotidien ?</h2>
+            <p class="question-sublabel">Cochez tout ce qui s'applique</p>
+            
+            <div style="margin-bottom: 20px;">
+                <strong style="color: var(--gray-400); font-size: 0.85rem; display: block; margin-bottom: 12px;">COMMUNICATION</strong>
+                <div class="options-grid">
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="whatsapp" id="q3-1">
+                        <label for="q3-1">WhatsApp</label>
+                    </div>
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="email" id="q3-2">
+                        <label for="q3-2">Email (Gmail, Outlook, Yahoo, autre)</label>
+                    </div>
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="sms" id="q3-3">
+                        <label for="q3-3">SMS</label>
+                    </div>
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="slack-teams" id="q3-4">
+                        <label for="q3-4">Slack / Teams / autre messagerie d'entreprise</label>
+                    </div>
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="visio" id="q3-5">
+                        <label for="q3-5">Visioconférence (Zoom, Google Meet, Teams, autre)</label>
+                    </div>
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="tel-fixe" id="q3-6">
+                        <label for="q3-6">Téléphone fixe / standard</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <strong style="color: var(--gray-400); font-size: 0.85rem; display: block; margin-bottom: 12px;">ABONNEMENTS IA PAYANTS</strong>
+                <div class="options-grid">
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="chatgpt" id="q3-ia-1">
+                        <label for="q3-ia-1">ChatGPT</label>
+                    </div>
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="claude" id="q3-ia-2">
+                        <label for="q3-ia-2">Claude</label>
+                    </div>
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="perplexity" id="q3-ia-3">
+                        <label for="q3-ia-3">Perplexity</label>
+                    </div>
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="gemini" id="q3-ia-4">
+                        <label for="q3-ia-4">Gemini</label>
+                    </div>
+                    <div class="option-card" data-has-subinput="true">
+                        <input type="checkbox" name="q3" value="autre-ia" id="q3-ia-5" onchange="toggleSubInput('q3-ia-5-sub', this.checked)">
+                        <label for="q3-ia-5" style="display: block;">Autre IA</label>
+                        <input type="text" class="option-subinput" id="q3-ia-5-sub" placeholder="Préciser..." style="display: none;">
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <strong style="color: var(--gray-400); font-size: 0.85rem; display: block; margin-bottom: 12px;">MOBILE UTILISÉ</strong>
+                <div class="options-grid">
+                    <div class="option-card" onclick="selectOption('q3-mobile', 'iphone')">
+                        <input type="radio" name="q3-mobile" value="iphone" id="q3-mobile-1">
+                        <label for="q3-mobile-1">iPhone</label>
+                    </div>
+                    <div class="option-card" onclick="selectOption('q3-mobile', 'android')">
+                        <input type="radio" name="q3-mobile" value="android" id="q3-mobile-2">
+                        <label for="q3-mobile-2">Android</label>
+                    </div>
+                    <div class="option-card" onclick="selectOption('q3-mobile', 'les-deux')">
+                        <input type="radio" name="q3-mobile" value="les-deux" id="q3-mobile-3">
+                        <label for="q3-mobile-3">Les deux</label>
+                    </div>
+                    <div class="option-card" onclick="selectOption('q3-mobile', 'aucun')">
+                        <input type="radio" name="q3-mobile" value="aucun" id="q3-mobile-4">
+                        <label for="q3-mobile-4">Aucun</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <strong style="color: var(--gray-400); font-size: 0.85rem; display: block; margin-bottom: 12px;">BUREAUTIQUE ET STOCKAGE</strong>
+                <div class="options-grid">
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="office" id="q3-7">
+                        <label for="q3-7">Microsoft Office (Word, Excel, PowerPoint)</label>
+                    </div>
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="google-workspace" id="q3-8">
+                        <label for="q3-8">Google Workspace (Docs, Sheets, Slides, Drive)</label>
+                    </div>
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="cloud-storage" id="q3-9">
+                        <label for="q3-9">Stockage cloud (OneDrive, Dropbox, Google Drive)</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <strong style="color: var(--gray-400); font-size: 0.85rem; display: block; margin-bottom: 12px;">GESTION ET ORGANISATION</strong>
+                <div class="options-grid">
+                    <div class="option-card" data-has-subinput="true">
+                        <input type="checkbox" name="q3" value="task-management" id="q3-10" onchange="toggleSubInput('q3-10-sub', this.checked)">
+                        <label for="q3-10" style="display: block;">Outil de gestion de tâches / projets</label>
+                        <input type="text" class="option-subinput" id="q3-10-sub" placeholder="Préciser le nom..." style="display: none;">
+                    </div>
+                    <div class="option-card" data-has-subinput="true">
+                        <input type="checkbox" name="q3" value="crm" id="q3-11" onchange="toggleSubInput('q3-11-sub', this.checked)">
+                        <label for="q3-11" style="display: block;">Outil de CRM / gestion clients</label>
+                        <input type="text" class="option-subinput" id="q3-11-sub" placeholder="Préciser le nom..." style="display: none;">
+                    </div>
+                    <div class="option-card" data-has-subinput="true">
+                        <input type="checkbox" name="q3" value="compta" id="q3-12" onchange="toggleSubInput('q3-12-sub', this.checked)">
+                        <label for="q3-12" style="display: block;">Outil de comptabilité / gestion commerciale</label>
+                        <input type="text" class="option-subinput" id="q3-12-sub" placeholder="Préciser le nom..." style="display: none;">
+                    </div>
+                    <div class="option-card" data-has-subinput="true">
+                        <input type="checkbox" name="q3" value="erp" id="q3-13" onchange="toggleSubInput('q3-13-sub', this.checked)">
+                        <label for="q3-13" style="display: block;">ERP</label>
+                        <input type="text" class="option-subinput" id="q3-13-sub" placeholder="Préciser le nom..." style="display: none;">
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <strong style="color: var(--gray-400); font-size: 0.85rem; display: block; margin-bottom: 12px;">MARKETING ET RÉSEAUX SOCIAUX</strong>
+                <div class="options-grid">
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="linkedin" id="q3-14">
+                        <label for="q3-14">LinkedIn</label>
+                    </div>
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="facebook-instagram" id="q3-15">
+                        <label for="q3-15">Facebook / Instagram</label>
+                    </div>
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="canva" id="q3-16">
+                        <label for="q3-16">Outil de création de contenu (Canva, autre)</label>
+                    </div>
+                    <div class="option-card" data-has-subinput="true">
+                        <input type="checkbox" name="q3" value="emailing" id="q3-17" onchange="toggleSubInput('q3-17-sub', this.checked)">
+                        <label for="q3-17" style="display: block;">Outil d'emailing / newsletter</label>
+                        <input type="text" class="option-subinput" id="q3-17-sub" placeholder="Préciser le nom..." style="display: none;">
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <strong style="color: var(--gray-400); font-size: 0.85rem; display: block; margin-bottom: 12px;">PAIEMENT</strong>
+                <div class="options-grid">
+                    <div class="option-card">
+                        <input type="checkbox" name="q3" value="mobile-money" id="q3-18">
+                        <label for="q3-18">Orange Money / Wave / Mobile Money</label>
+                    </div>
+                    <div class="option-card" data-has-subinput="true">
+                        <input type="checkbox" name="q3" value="paiement-online" id="q3-19" onchange="toggleSubInput('q3-19-sub', this.checked)">
+                        <label for="q3-19" style="display: block;">Plateforme de paiement en ligne</label>
+                        <input type="text" class="option-subinput" id="q3-19-sub" placeholder="Préciser le nom..." style="display: none;">
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <strong style="color: var(--gray-400); font-size: 0.85rem; display: block; margin-bottom: 12px;">AUTRE</strong>
+                <div class="input-wrapper">
+                    <input type="text" class="text-input" id="q3-autre" placeholder="Autre outil...">
+                </div>
+            </div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 4: Q4 - Budget outils -->
+        <div class="screen" data-screen="5">
+            <h2 class="question-label">Au total, combien dépensez-vous par mois en abonnements à ces outils digitaux ?</h2>
+            <p class="question-sublabel">Inclure : licences logicielles, abonnements cloud, outils en ligne — hors téléphone et internet</p>
+            <div class="options-grid">
+                <div class="option-card" onclick="selectOption('q4', 'ne-sait-pas')">
+                    <input type="radio" name="q4" value="ne-sait-pas" id="q4-1">
+                    <label for="q4-1">Je ne sais pas / Je n'ai pas la visibilité</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q4', 'moins-25k')">
+                    <input type="radio" name="q4" value="moins-25k" id="q4-2">
+                    <label for="q4-2">Moins de 25 000 FCFA (~38€)</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q4', '25-50k')">
+                    <input type="radio" name="q4" value="25-50k" id="q4-3">
+                    <label for="q4-3">25 000 - 50 000 FCFA (38-76€)</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q4', '50-100k')">
+                    <input type="radio" name="q4" value="50-100k" id="q4-4">
+                    <label for="q4-4">50 000 - 100 000 FCFA (76-150€)</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q4', '100-250k')">
+                    <input type="radio" name="q4" value="100-250k" id="q4-5">
+                    <label for="q4-5">100 000 - 250 000 FCFA (150-380€)</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q4', 'plus-250k')">
+                    <input type="radio" name="q4" value="plus-250k" id="q4-6">
+                    <label for="q4-6">Plus de 250 000 FCFA</label>
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 5: Q5 - Journée type -->
+        <div class="screen" data-screen="6">
+            <h2 class="question-label">Décrivez votre journée type, du matin au soir. Qu'est-ce que vous faites en arrivant au bureau ?</h2>
+            <div class="input-wrapper">
+                <textarea class="textarea-input" id="q5" placeholder="Racontez votre journée type..."></textarea>
+                <p class="voice-tip">💡 Astuce : Utilisez la dictée vocale de votre clavier (icône micro 🎤)</p>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 6: Q6 - Ce qui prend le plus de temps -->
+        <div class="screen" data-screen="7">
+            <h2 class="question-label">Qu'est-ce qui vous prend le plus de temps et que vous aimeriez ne plus faire vous-même ?</h2>
+            <div class="input-wrapper" style="margin-bottom: 24px;">
+                <textarea class="textarea-input" id="q6-text" placeholder="Décrivez ce qui vous prend le plus de temps..."></textarea>
+                <p class="voice-tip">💡 Astuce : Utilisez la dictée vocale de votre clavier (icône micro 🎤)</p>
+            </div>
+            
+            <p class="question-sublabel" style="margin-bottom: 16px;">Cochez aussi ce qui s'applique :</p>
+            <div class="options-grid">
+                <div class="option-card">
+                    <input type="checkbox" name="q6" value="relances" id="q6-1">
+                    <label for="q6-1">Relances clients / fournisseurs / partenaires</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q6" value="redaction" id="q6-2">
+                    <label for="q6-2">Rédaction de courriers, emails, notes internes</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q6" value="suivi-equipe" id="q6-3">
+                    <label for="q6-3">Suivi des tâches de mon équipe</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q6" value="recherche-info" id="q6-4">
+                    <label for="q6-4">Recherche d'informations (prix, contacts, documents, historiques)</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q6" value="gestion-documents" id="q6-5">
+                    <label for="q6-5">Retrouver, comparer ou mettre à jour des documents (offres, contrats, propositions)</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q6" value="reunions" id="q6-6">
+                    <label for="q6-6">Réunions et comptes-rendus</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q6" value="taches-admin" id="q6-7">
+                    <label for="q6-7">Tâches administratives (factures, déclarations, courriers officiels)</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q6" value="rapports" id="q6-8">
+                    <label for="q6-8">Préparation de rapports et tableaux de bord</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q6" value="prospection" id="q6-9">
+                    <label for="q6-9">Prospection et recherche de nouveaux clients</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q6" value="plannings" id="q6-10">
+                    <label for="q6-10">Gestion des plannings et de l'agenda</label>
+                </div>
+                <div class="option-card" data-has-subinput="true">
+                    <input type="checkbox" name="q6" value="autre" id="q6-11" onchange="toggleSubInput('q6-11-sub', this.checked)">
+                    <label for="q6-11" style="display: block;">Autre</label>
+                    <input type="text" class="option-subinput" id="q6-11-sub" placeholder="Préciser..." style="display: none;">
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 7: Q7 - Assistant(e) -->
+        <div class="screen" data-screen="8">
+            <h2 class="question-label">Avez-vous un(e) assistant(e) ?</h2>
+            <div class="options-grid">
+                <div class="option-card" onclick="selectOption('q7', 'oui')">
+                    <input type="radio" name="q7" value="oui" id="q7-1">
+                    <label for="q7-1">Oui</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q7', 'non')">
+                    <input type="radio" name="q7" value="non" id="q7-2">
+                    <label for="q7-2">Non</label>
+                </div>
+            </div>
+            
+            <div id="q7-followup" style="display: none; margin-top: 24px;">
+                <h3 class="question-sublabel" id="q7-followup-label"></h3>
+                <div class="input-wrapper">
+                    <textarea class="textarea-input" id="q7-detail" placeholder="Votre réponse..."></textarea>
+                    <p class="voice-tip">💡 Astuce : Utilisez la dictée vocale de votre clavier (icône micro 🎤)</p>
+                </div>
+            </div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 8: Q8 - Mise à jour matinale -->
+        <div class="screen" data-screen="9">
+            <h2 class="question-label">Le matin, comment vous mettez-vous à jour sur ce qui s'est passé la veille et ce qui vous attend ?</h2>
+            <div class="input-wrapper">
+                <textarea class="textarea-input" id="q8" placeholder="Décrivez votre routine matinale..."></textarea>
+                <p class="voice-tip">💡 Astuce : Utilisez la dictée vocale de votre clavier (icône micro 🎤)</p>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 9: Q9 - Canaux de communication -->
+        <div class="screen" data-screen="10">
+            <h2 class="question-label">Par quel canal communiquez-vous le plus avec votre équipe ? Et avec vos clients ?</h2>
+            <div class="input-wrapper">
+                <textarea class="textarea-input" id="q9" placeholder="Ex: Avec l'équipe par WhatsApp, avec les clients par email et téléphone..."></textarea>
+                <p class="voice-tip">💡 Astuce : Utilisez la dictée vocale de votre clavier (icône micro 🎤)</p>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 10: Q10 - Retrouver informations -->
+        <div class="screen" data-screen="11">
+            <h2 class="question-label">Quand vous avez besoin d'une information sur un client, un dossier ou un projet — comment vous la retrouvez ?</h2>
+            <div class="input-wrapper">
+                <textarea class="textarea-input" id="q10" placeholder="Décrivez votre processus..."></textarea>
+                <p class="voice-tip">💡 Astuce : Utilisez la dictée vocale de votre clavier (icône micro 🎤)</p>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 11: Q11 - Gestion documentaire -->
+        <div class="screen" data-screen="12">
+            <h2 class="question-label">Quand vous devez envoyer une offre, un contrat ou un document à un nouveau client, comment procédez-vous ?</h2>
+            <div class="options-grid">
+                <div class="option-card">
+                    <input type="checkbox" name="q11" value="reprendre-ancien" id="q11-1">
+                    <label for="q11-1">Je reprends un ancien document et je l'adapte manuellement</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q11" value="demande-aide" id="q11-2">
+                    <label for="q11-2">Je demande à quelqu'un de me le préparer</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q11" value="modeles" id="q11-3">
+                    <label for="q11-3">J'ai des modèles à jour facilement accessibles</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q11" value="bazar" id="q11-4">
+                    <label for="q11-4">C'est souvent le bazar pour retrouver la bonne version</label>
+                </div>
+                <div class="option-card" data-has-subinput="true">
+                    <input type="checkbox" name="q11" value="autre" id="q11-5" onchange="toggleSubInput('q11-5-sub', this.checked)">
+                    <label for="q11-5" style="display: block;">Autre</label>
+                    <input type="text" class="option-subinput" id="q11-5-sub" placeholder="Préciser..." style="display: none;">
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 12: Q12 - Perte opportunité -->
+        <div class="screen" data-screen="13">
+            <h2 class="question-label">Avez-vous déjà perdu un client ou raté une opportunité parce qu'une information a été oubliée, mal transmise, ou un document introuvable ?</h2>
+            <div class="input-wrapper">
+                <textarea class="textarea-input" id="q12" placeholder="Racontez votre expérience..."></textarea>
+                <p class="voice-tip">💡 Astuce : Utilisez la dictée vocale de votre clavier (icône micro 🎤)</p>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 13: Q13 - Nombre réunions -->
+        <div class="screen" data-screen="14">
+            <h2 class="question-label">Combien de réunions faites-vous par semaine environ ? (internes + externes)</h2>
+            <div class="options-grid">
+                <div class="option-card" onclick="selectOption('q13', '1-3')">
+                    <input type="radio" name="q13" value="1-3" id="q13-1">
+                    <label for="q13-1">1-3</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q13', '4-7')">
+                    <input type="radio" name="q13" value="4-7" id="q13-2">
+                    <label for="q13-2">4-7</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q13', '8-15')">
+                    <input type="radio" name="q13" value="8-15" id="q13-3">
+                    <label for="q13-3">8-15</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q13', 'plus-15')">
+                    <input type="radio" name="q13" value="plus-15" id="q13-4">
+                    <label for="q13-4">Plus de 15</label>
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 14: Q14 - Trace décisions -->
+        <div class="screen" data-screen="15">
+            <h2 class="question-label">Comment gardez-vous une trace de ce qui est décidé en réunion ?</h2>
+            <div class="options-grid">
+                <div class="option-card">
+                    <input type="checkbox" name="q14" value="notes-manuscrites" id="q14-1">
+                    <label for="q14-1">Notes manuscrites</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q14" value="notes-ordinateur" id="q14-2">
+                    <label for="q14-2">Quelqu'un prend des notes sur ordinateur</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q14" value="whatsapp-email" id="q14-3">
+                    <label for="q14-3">Message WhatsApp / email après la réunion</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q14" value="rien" id="q14-4">
+                    <label for="q14-4">Rien de formel</label>
+                </div>
+                <div class="option-card" data-has-subinput="true">
+                    <input type="checkbox" name="q14" value="autre" id="q14-5" onchange="toggleSubInput('q14-5-sub', this.checked)">
+                    <label for="q14-5" style="display: block;">Autre</label>
+                    <input type="text" class="option-subinput" id="q14-5-sub" placeholder="Préciser..." style="display: none;">
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 14bis: Q14bis - Note-takers (NOUVEAU) -->
+        <div class="screen" data-screen="16">
+            <h2 class="question-label">Utilisez-vous un outil d'enregistrement et transcription automatique des réunions ?</h2>
+            <div class="options-grid">
+                <div class="option-card">
+                    <input type="radio" name="q14bis" value="oui" id="q14bis-1">
+                    <label for="q14bis-1">Oui</label>
+                </div>
+                <div class="option-card">
+                    <input type="radio" name="q14bis" value="non" id="q14bis-2">
+                    <label for="q14bis-2">Non</label>
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <label for="q14bis-outil" style="font-size: 0.9rem; color: var(--gray-400); display: block; margin-bottom: 8px;">Si oui, lequel ?</label>
+                <input type="text" class="text-input" id="q14bis-outil" placeholder="Nom de l'outil...">
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 15: Q15 - Suivi post-réunion (échelle) -->
+        <div class="screen" data-screen="17">
+            <h2 class="question-label">Après une réunion, est-il facile de savoir qui devait faire quoi — et de s'assurer que c'est fait ?</h2>
+            <div class="scale-container">
+                <div class="scale-options">
+                    <div class="scale-option" onclick="selectOption('q15', 'tres-facile')">
+                        <input type="radio" name="q15" value="tres-facile" id="q15-1">
+                        <label for="q15-1">Très facile, tout est suivi</label>
+                    </div>
+                    <div class="scale-option" onclick="selectOption('q15', 'plutot-bien')">
+                        <input type="radio" name="q15" value="plutot-bien" id="q15-2">
+                        <label for="q15-2">Plutôt bien, mais ça m'échappe parfois</label>
+                    </div>
+                    <div class="scale-option" onclick="selectOption('q15', 'difficile')">
+                        <input type="radio" name="q15" value="difficile" id="q15-3">
+                        <label for="q15-3">C'est difficile, je dois relancer souvent</label>
+                    </div>
+                    <div class="scale-option" onclick="selectOption('q15', 'tres-probleme')">
+                        <input type="radio" name="q15" value="tres-probleme" id="q15-4">
+                        <label for="q15-4">C'est un vrai problème, beaucoup de choses passent à la trappe</label>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 16: Q16 - Suivi général -->
+        <div class="screen" data-screen="18">
+            <h2 class="question-label">De manière générale, le suivi des tâches et des engagements de chaque personne — vous-même inclus — est-il efficace dans votre organisation ?</h2>
+            <div class="input-wrapper">
+                <textarea class="textarea-input" id="q16" placeholder="Partagez votre vision..."></textarea>
+                <p class="voice-tip">💡 Astuce : Utilisez la dictée vocale de votre clavier (icône micro 🎤)</p>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 17: Q17 - Acquisition clients -->
+        <div class="screen" data-screen="19">
+            <h2 class="question-label">Comment trouvez-vous de nouveaux clients aujourd'hui ?</h2>
+            <p class="question-sublabel">Cochez tout ce qui s'applique</p>
+            <div class="options-grid">
+                <div class="option-card">
+                    <input type="checkbox" name="q17" value="bouche-oreille" id="q17-1">
+                    <label for="q17-1">Bouche-à-oreille / réseau personnel</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q17" value="reseau-pro" id="q17-2">
+                    <label for="q17-2">Réseau professionnel / recommandations</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q17" value="linkedin" id="q17-3">
+                    <label for="q17-3">LinkedIn</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q17" value="facebook-instagram" id="q17-4">
+                    <label for="q17-4">Facebook / Instagram</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q17" value="site-web" id="q17-5">
+                    <label for="q17-5">Site web de l'entreprise</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q17" value="commercial-terrain" id="q17-6">
+                    <label for="q17-6">Appels / commercial terrain</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q17" value="salons-evenements" id="q17-7">
+                    <label for="q17-7">Salons / événements</label>
+                </div>
+                <div class="option-card" data-has-subinput="true">
+                    <input type="checkbox" name="q17" value="autre" id="q17-8" onchange="toggleSubInput('q17-8-sub', this.checked)">
+                    <label for="q17-8" style="display: block;">Autre</label>
+                    <input type="text" class="option-subinput" id="q17-8-sub" placeholder="Préciser..." style="display: none;">
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 18: Q18 - Présence en ligne -->
+        <div class="screen" data-screen="20">
+            <h2 class="question-label">Votre entreprise a-t-elle une présence en ligne ?</h2>
+            <p class="question-sublabel">Cochez tout ce qui s'applique</p>
+            <div class="options-grid">
+                <div class="option-card">
+                    <input type="checkbox" name="q18" value="site-web" id="q18-1">
+                    <label for="q18-1">Site web</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q18" value="page-facebook" id="q18-2">
+                    <label for="q18-2">Page Facebook</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q18" value="compte-instagram" id="q18-3">
+                    <label for="q18-3">Compte Instagram</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q18" value="page-linkedin" id="q18-4">
+                    <label for="q18-4">Page LinkedIn entreprise</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q18" value="profil-linkedin" id="q18-5">
+                    <label for="q18-5">Profil LinkedIn personnel actif</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q18" value="aucune" id="q18-6">
+                    <label for="q18-6">Aucune présence en ligne</label>
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 19: INFO - Présentation concept -->
+        <div class="screen" data-screen="21">
+            <div class="info-content">
+                <h3 class="info-title">Le concept</h3>
+                <p class="info-text">
+                    <strong>Imaginez un système qui connaît votre entreprise, vos clients, vos dossiers — et qui travaille pour vous en permanence.</strong>
+                </p>
+                <p class="info-text">
+                    Il ne vous attend pas. Il anticipe vos besoins avant que vous les formuliez, vous suggère des décisions et des actions avant même que vous ne réalisiez qu'il fallait les prendre.
+                </p>
+                <p class="info-text">
+                    Il transforme vos paroles en actions suivies jusqu'à clôture. Il "range la maison après la fête". Pour les réunions : qui a promis quoi, à quelle échéance, avec quels risques. Qui est en retard, qui doit être relancé.
+                </p>
+                <p class="info-text">
+                    Chaque matin, tout est là — ce qui est urgent, ce qui traîne, ce qui est réglé, ce qu'il a déjà préparé pour vous. Il vous suggère des choses que vous n'auriez pas pensé à faire.
+                </p>
+                <p class="info-text">
+                    <strong>Vous ne faites que valider. Vous ne portez plus le poids tout seul.</strong>
+                </p>
+                <p class="info-text">
+                    C'est comme avoir un Directeur expérimenté qui épaule chacun de vos collaborateurs — ou un employé supplémentaire dans chaque domaine clé de votre entreprise.
+                </p>
+                <p class="info-text">
+                    KLYX peut remplacer vos abonnements IA actuels (ChatGPT, etc.) tout en étant spécialisé pour votre business.
+                </p>
+                <p class="info-text">
+                    Plus il vous connaît, plus il est efficace. Il apprend vos dossiers, vos habitudes, vos priorités. Ce qui était perdu dans les emails, les WhatsApp, les réunions — il le capture, le classe, et le ressort au bon moment.
+                </p>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Continuer</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 20: Q19 - Première réaction -->
+        <div class="screen" data-screen="22">
+            <h2 class="question-label">Quelle est votre première réaction ?</h2>
+            <div class="input-wrapper">
+                <textarea class="textarea-input" id="q19" placeholder="Partagez votre réaction spontanée..."></textarea>
+                <p class="voice-tip">💡 Astuce : Utilisez la dictée vocale de votre clavier (icône micro 🎤)</p>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 21: Q20 - Première demande -->
+        <div class="screen" data-screen="23">
+            <h2 class="question-label">Si cet outil existait aujourd'hui, quelle est la première chose que vous lui demanderiez de faire ?</h2>
+            <div class="input-wrapper">
+                <textarea class="textarea-input" id="q20" placeholder="La première chose que vous lui confieriez..."></textarea>
+                <p class="voice-tip">💡 Astuce : Utilisez la dictée vocale de votre clavier (icône micro 🎤)</p>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 22: Q21 - Ranking features (boutons +/-) -->
+        <div class="screen" data-screen="24">
+            <h2 class="question-label">Sélectionnez les 3 fonctionnalités les plus importantes pour vous</h2>
+            <p class="question-sublabel">Cochez uniquement vos 3 priorités principales</p>
+            <div class="options-grid">
+                <div class="option-card">
+                    <input type="checkbox" name="q21" value="briefing" id="q21-1" onchange="limitCheckboxes('q21', 3)">
+                    <label for="q21-1">Briefing matinal : résumé de ce qui est urgent, en retard, à traiter</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q21" value="suivi-relance" id="q21-2" onchange="limitCheckboxes('q21', 3)">
+                    <label for="q21-2">Suivi et relance automatique des tâches de chaque personne</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q21" value="notetaker" id="q21-3" onchange="limitCheckboxes('q21', 3)">
+                    <label for="q21-3">Prise de notes en réunion et extraction des actions à suivre</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q21" value="redaction-docs" id="q21-4" onchange="limitCheckboxes('q21', 3)">
+                    <label for="q21-4">Rédaction et mise à jour de documents (offres, contrats, courriers)</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q21" value="recherche" id="q21-5" onchange="limitCheckboxes('q21', 3)">
+                    <label for="q21-5">Recherche instantanée dans tous vos dossiers et historiques</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q21" value="presence-online" id="q21-6" onchange="limitCheckboxes('q21', 3)">
+                    <label for="q21-6">Gestion de votre présence en ligne et prospection digitale</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q21" value="analyse-chiffres" id="q21-7" onchange="limitCheckboxes('q21', 3)">
+                    <label for="q21-7">Analyse de vos chiffres et préparation de rapports</label>
+                </div>
+                <div class="option-card">
+                    <input type="checkbox" name="q21" value="memoire" id="q21-8" onchange="limitCheckboxes('q21', 3)">
+                    <label for="q21-8">Mémoire de l'entreprise : tout ce qui est discuté est capturé, classé, exploitable</label>
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 23: Q22 - Prix (avec rappel Q4) -->
+        <div class="screen" data-screen="25">
+            <h2 class="question-label" id="q22-label">Pour un système comme celui décrit, combien seriez-vous prêt à investir par mois ?</h2>
+            <div class="options-grid">
+                <div class="option-card" onclick="selectOption('q22', '10-25k')">
+                    <input type="radio" name="q22" value="10-25k" id="q22-1">
+                    <label for="q22-1">10 000 - 25 000 FCFA (15-38€)</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q22', '25-50k')">
+                    <input type="radio" name="q22" value="25-50k" id="q22-2">
+                    <label for="q22-2">25 000 - 50 000 FCFA (38-76€)</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q22', '50-100k')">
+                    <input type="radio" name="q22" value="50-100k" id="q22-3">
+                    <label for="q22-3">50 000 - 100 000 FCFA (76-150€)</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q22', '100-250k')">
+                    <input type="radio" name="q22" value="100-250k" id="q22-4">
+                    <label for="q22-4">100 000 - 250 000 FCFA (150-380€)</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q22', 'plus-250k')">
+                    <input type="radio" name="q22" value="plus-250k" id="q22-5">
+                    <label for="q22-5">Plus de 250 000 FCFA</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q22', 'pas-interesse')">
+                    <input type="radio" name="q22" value="pas-interesse" id="q22-6">
+                    <label for="q22-6">Je ne suis pas intéressé</label>
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour</button>
+                <button class="btn btn-primary btn-next" onclick="nextScreen()">Suivant</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 24: Q23 - Beta test -->
+        <div class="screen" data-screen="26">
+            <h2 class="question-label">Accepteriez-vous d'être parmi les premiers à tester ce système quand il sera prêt ?</h2>
+            <div class="options-grid">
+                <div class="option-card" onclick="selectOption('q23', 'oui')">
+                    <input type="radio" name="q23" value="oui" id="q23-1">
+                    <label for="q23-1">Oui, avec plaisir</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q23', 'peut-etre')">
+                    <input type="radio" name="q23" value="peut-etre" id="q23-2">
+                    <label for="q23-2">Peut-être, recontactez-moi</label>
+                </div>
+                <div class="option-card" onclick="selectOption('q23', 'non')">
+                    <input type="radio" name="q23" value="non" id="q23-3">
+                    <label for="q23-3">Non merci</label>
+                </div>
+            </div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-primary btn-submit" onclick="submitForm()">Soumettre</button>
+                <button class="btn btn-secondary btn-back" onclick="prevScreen()">Retour à la page précédente</button>
+            </div>
+        </div>
+        
+        <!-- SCREEN 25: Thank you -->
+        <div class="screen" data-screen="27">
+            <div class="thank-you-content">
+                <svg class="thank-you-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <h2 class="thank-you-title">Merci !</h2>
+                <p class="thank-you-text">
+                    Vos réponses ont été enregistrées avec succès. Elles nous seront précieuses pour concevoir un outil qui répond vraiment à vos besoins.
+                    <br><br>
+                    Nous vous recontacterons bientôt.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        // CONFIGURATION SUPABASE
+        // ═══════════════════════════════════════════════════════════════
+        const SUPABASE_URL = 'https://ctdavxbdxpfcnvwybpfr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0ZGF2eGJkeHBmY252d3licGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4Mjk3ODgsImV4cCI6MjA4NjQwNTc4OH0.V0HY9SLE4Z6zv7ja2f24AUs49WtgpAFJ6YLmTODXOm0';
+        
+        // Wait for Supabase to be loaded
+        let supabase;
+        if (window.supabase && window.supabase.createClient) {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } else {
+            console.error('Supabase not loaded properly');
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // STATE MANAGEMENT
+        // ═══════════════════════════════════════════════════════════════
+        let currentScreen = 0;
+        const totalScreens = 28; // 0 (welcome) + 1 (infos) + 25 questions + 1 (thank you)
+        let responses = {};
+        let isRecording = false;
+        let recognition = null;
+        
+        // Check for saved progress and show resume modal
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('klyx-discovery-responses');
+            if (saved) {
+                // Show resume modal
+                document.getElementById('resumeModal').classList.add('active');
+            } else {
+                // First visit - show welcome screen
+                showScreen(0);
+                updateProgress();
+            }
+        });
+        
+        // Resume modal functions
+        function startFresh() {
+            localStorage.removeItem('klyx-discovery-responses');
+            responses = {};
+            currentScreen = 0;
+            document.getElementById('resumeModal').classList.remove('active');
+            showScreen(0);
+            updateProgress();
+        }
+        
+        function resumeProgress() {
+            const saved = localStorage.getItem('klyx-discovery-responses');
+            if (saved) {
+                responses = JSON.parse(saved);
+                // Find last completed screen
+                const screenKeys = Object.keys(responses).filter(k => k.startsWith('q') || k === 'prenom');
+                let lastScreen = 0;
+                
+                // Rough estimation of last screen based on responses
+                if (responses.q1) lastScreen = Math.max(lastScreen, 2);
+                if (responses.q5) lastScreen = Math.max(lastScreen, 6);
+                if (responses.q10) lastScreen = Math.max(lastScreen, 11);
+                if (responses.q15) lastScreen = Math.max(lastScreen, 16);
+                if (responses.q20) lastScreen = Math.max(lastScreen, 21);
+                
+                currentScreen = lastScreen;
+                showScreen(currentScreen);
+                updateProgress();
+            }
+            document.getElementById('resumeModal').classList.remove('active');
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // NAVIGATION
+        // ═══════════════════════════════════════════════════════════════
+        function nextScreen() {
+            // Save current screen data before moving
+            saveScreenData();
+            
+            // Move to next screen
+            if (currentScreen < totalScreens - 1) {
+                currentScreen++;
+                showScreen(currentScreen);
+                updateProgress();
+                
+                // Auto-save to localStorage
+                localStorage.setItem('klyx-discovery-responses', JSON.stringify(responses));
+                
+                // Partial save to Supabase (every 5 screens)
+                if (currentScreen % 5 === 0) {
+                    saveToSupabase(false);
+                }
+            }
+        }
+        
+        function prevScreen() {
+            if (currentScreen > 0) {
+                currentScreen--;
+                showScreen(currentScreen);
+                updateProgress();
+            }
+        }
+        
+        function showScreen(index) {
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach((screen, i) => {
+                screen.classList.toggle('active', i === index);
+            });
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+            
+            // Special handling for Q22 (price with Q4 reference)
+            if (index === 25) {
+                updateQ22Label();
+            }
+        }
+        
+        function updateProgress() {
+            const progress = (currentScreen / (totalScreens - 1)) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            
+            // Hide progress text on welcome (0), infos (1), and thank you (last)
+            if (currentScreen === 0 || currentScreen === 1 || currentScreen === totalScreens - 1) {
+                document.getElementById('progressText').style.display = 'none';
+            } else {
+                document.getElementById('progressText').style.display = 'block';
+                // currentScreen - 1 because we skip infos screen (screen 1)
+                // totalScreens - 3 because we exclude welcome (0), infos (1), and thank you (last)
+                document.getElementById('progressText').textContent = `QUESTION ${currentScreen - 1} SUR ${totalScreens - 3}`;
+            }
+        }
+        
+        function updateQ22Label() {
+            const q4Value = responses.q4;
+            const label = document.getElementById('q22-label');
+            
+            if (q4Value && q4Value !== 'ne-sait-pas') {
+                const budgetMap = {
+                    'moins-25k': 'moins de 25 000 FCFA',
+                    '25-50k': '25 000 - 50 000 FCFA',
+                    '50-100k': '50 000 - 100 000 FCFA',
+                    '100-250k': '100 000 - 250 000 FCFA',
+                    'plus-250k': 'plus de 250 000 FCFA'
+                };
+                const budgetText = budgetMap[q4Value] || 'un certain montant';
+                label.textContent = `Vous dépensez actuellement environ ${budgetText} par mois en outils digitaux. En sachant le coût d'un secrétariat et le coût horaire des collaborateurs, quel budget seriez-vous prêt à investir dans KLYX par mois ?`;
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // DATA COLLECTION
+        // ═══════════════════════════════════════════════════════════════
+        function saveScreenData() {
+            switch(currentScreen) {
+                case 1: // Infos prospect (NOUVEAU)
+                    responses.prenom = document.getElementById('prenom')?.value || '';
+                    responses.nom = document.getElementById('nom')?.value || '';
+                    responses.email = document.getElementById('email')?.value || '';
+                    responses.country_code = document.getElementById('country-code')?.value || '';
+                    responses.whatsapp = document.getElementById('whatsapp')?.value || '';
+                    break;
+                case 2: // Q1
+                    responses.q1 = document.getElementById('q1').value;
+                    break;
+                case 3: // Q2
+                    responses.q2 = getSelectedRadio('q2');
+                    break;
+                case 4: // Q3
+                    responses.q3 = getCheckboxData('q3', [
+                        'q3-10-sub', 'q3-11-sub', 'q3-12-sub', 'q3-13-sub', 
+                        'q3-17-sub', 'q3-19-sub', 'q3-ia-5-sub'
+                    ]);
+                    responses.q3_autre = document.getElementById('q3-autre').value;
+                    responses.q3_mobile = getSelectedRadio('q3-mobile');
+                    break;
+                case 5: // Q4
+                    responses.q4 = getSelectedRadio('q4');
+                    break;
+                case 6: // Q5
+                    responses.q5 = document.getElementById('q5').value;
+                    break;
+                case 7: // Q6
+                    responses.q6_text = document.getElementById('q6-text').value;
+                    responses.q6_checkboxes = getCheckboxData('q6', ['q6-11-sub']);
+                    break;
+                case 8: // Q7
+                    responses.q7 = getSelectedRadio('q7');
+                    responses.q7_detail = document.getElementById('q7-detail').value;
+                    break;
+                case 9: // Q8
+                    responses.q8 = document.getElementById('q8').value;
+                    break;
+                case 10: // Q9
+                    responses.q9 = document.getElementById('q9').value;
+                    break;
+                case 11: // Q10
+                    responses.q10 = document.getElementById('q10').value;
+                    break;
+                case 12: // Q11
+                    responses.q11 = getCheckboxData('q11', ['q11-5-sub']);
+                    break;
+                case 13: // Q12
+                    responses.q12 = document.getElementById('q12').value;
+                    break;
+                case 14: // Q13
+                    responses.q13 = getSelectedRadio('q13');
+                    break;
+                case 15: // Q14
+                    responses.q14 = getCheckboxData('q14', ['q14-5-sub']);
+                    break;
+                case 16: // Q14bis (NOUVEAU)
+                    responses.q14bis = getSelectedRadio('q14bis');
+                    responses.q14bis_outil = document.getElementById('q14bis-outil')?.value || '';
+                    break;
+                case 17: // Q15
+                    responses.q15 = getSelectedRadio('q15');
+                    break;
+                case 18: // Q16
+                    responses.q16 = document.getElementById('q16').value;
+                    break;
+                case 19: // Q17
+                    responses.q17 = getCheckboxData('q17', ['q17-8-sub']);
+                    break;
+                case 20: // Q18
+                    responses.q18 = getCheckboxData('q18', []);
+                    break;
+                case 22: // Q19
+                    responses.q19 = document.getElementById('q19').value;
+                    break;
+                case 23: // Q20
+                    responses.q20 = document.getElementById('q20').value;
+                    break;
+                case 24: // Q21 (top 3 priorities - checkboxes)
+                    responses.q21 = Array.from(document.querySelectorAll('input[name="q21"]:checked')).map(cb => cb.value);
+                    break;
+                case 25: // Q22
+                    responses.q22 = getSelectedRadio('q22');
+                    break;
+                case 26: // Q23
+                    responses.q23 = getSelectedRadio('q23');
+                    break;
+            }
+        }
+        
+        function getSelectedRadio(name) {
+            const selected = document.querySelector(`input[name="${name}"]:checked`);
+            return selected ? selected.value : null;
+        }
+        
+        // Limit checkbox selection to a maximum number
+        function limitCheckboxes(name, max) {
+            const checkboxes = document.querySelectorAll(`input[name="${name}"]`);
+            const checked = Array.from(checkboxes).filter(cb => cb.checked);
+            
+            if (checked.length > max) {
+                // Uncheck the last one clicked
+                event.target.checked = false;
+                alert(`Vous ne pouvez sélectionner que ${max} fonctionnalités maximum.`);
+            }
+        }
+        
+        function getCheckboxData(name, subInputIds) {
+            const checkboxes = document.querySelectorAll(`input[name="${name}"]:checked`);
+            const values = Array.from(checkboxes).map(cb => {
+                const value = cb.value;
+                const subInputId = subInputIds.find(id => id.startsWith(cb.id + '-sub'));
+                if (subInputId) {
+                    const subValue = document.getElementById(subInputId).value;
+                    return subValue ? `${value}: ${subValue}` : value;
+                }
+                return value;
+            });
+            return values;
+        }
+        
+        
+        // ═══════════════════════════════════════════════════════════════
+        // OPTION SELECTION
+        // ═══════════════════════════════════════════════════════════════
+        function selectOption(name, value) {
+            const cards = document.querySelectorAll(`.option-card input[name="${name}"]`);
+            cards.forEach(input => {
+                const card = input.closest('.option-card');
+                if (input.value === value) {
+                    input.checked = true;
+                    card.classList.add('selected');
+                } else {
+                    if (input.type === 'radio') {
+                        input.checked = false;
+                        card.classList.remove('selected');
+                    }
+                }
+            });
+            
+            // Handle Q7 followup
+            if (name === 'q7') {
+                const followup = document.getElementById('q7-followup');
+                const label = document.getElementById('q7-followup-label');
+                if (value === 'oui') {
+                    followup.style.display = 'block';
+                    label.textContent = "Qu'est-ce qu'il/elle fait pour vous au quotidien ?";
+                } else if (value === 'non') {
+                    followup.style.display = 'block';
+                    label.textContent = "Si vous pouviez en avoir un(e), quelle serait la première chose que vous lui confieriez ?";
+                }
+            }
+        }
+        
+        function toggleSubInput(subInputId, show) {
+            const input = document.getElementById(subInputId);
+            if (input) {
+                input.style.display = show ? 'block' : 'none';
+                if (!show) input.value = '';
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // DRAG & DROP RANKING
+        // ═══════════════════════════════════════════════════════════════
+        let draggedItem = null;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const rankingList = document.getElementById('rankingList');
+            if (rankingList) {
+                const items = rankingList.querySelectorAll('.ranking-item');
+                
+                items.forEach(item => {
+                    item.addEventListener('dragstart', handleDragStart);
+                    item.addEventListener('dragover', handleDragOver);
+                    item.addEventListener('drop', handleDrop);
+                    item.addEventListener('dragend', handleDragEnd);
+                    
+                    // Touch events for mobile
+                    item.addEventListener('touchstart', handleTouchStart, { passive: false });
+                    item.addEventListener('touchmove', handleTouchMove, { passive: false });
+                    item.addEventListener('touchend', handleTouchEnd);
+                });
+            }
+        });
+        
+        function handleDragStart(e) {
+            draggedItem = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(e.clientY);
+            const rankingList = document.getElementById('rankingList');
+            if (afterElement == null) {
+                rankingList.appendChild(draggedItem);
+            } else {
+                rankingList.insertBefore(draggedItem, afterElement);
+            }
+            updateRankingNumbers();
+        }
+        
+        function handleDrop(e) {
+            e.stopPropagation();
+            return false;
+        }
+        
+        function handleDragEnd() {
+            this.classList.remove('dragging');
+            draggedItem = null;
+        }
+        
+        // Touch events for mobile
+        let touchY = 0;
+        function handleTouchStart(e) {
+            draggedItem = this;
+            this.classList.add('dragging');
+            touchY = e.touches[0].clientY;
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            touchY = e.touches[0].clientY;
+            const afterElement = getDragAfterElement(touchY);
+            const rankingList = document.getElementById('rankingList');
+            if (afterElement == null) {
+                rankingList.appendChild(draggedItem);
+            } else {
+                rankingList.insertBefore(draggedItem, afterElement);
+            }
+            updateRankingNumbers();
+        }
+        
+        function handleTouchEnd() {
+            this.classList.remove('dragging');
+            draggedItem = null;
+        }
+        
+        function getDragAfterElement(y) {
+            const rankingList = document.getElementById('rankingList');
+            const draggableElements = [...rankingList.querySelectorAll('.ranking-item:not(.dragging)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // SUPABASE SAVE
+        // ═══════════════════════════════════════════════════════════════
+        async function saveToSupabase(completed) {
+            try {
+                const { data, error } = await supabase
+                    .from('discovery_responses')
+                    .insert([{
+                        responses: responses,
+                        completed: completed,
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (error) throw error;
+                return true;
+            } catch (error) {
+                console.error('Error saving to Supabase:', error);
+                return false;
+            }
+        }
+        
+        async function submitForm() {
+            // Save final screen data
+            saveScreenData();
+            
+            // Show loading
+            document.getElementById('loadingOverlay').classList.add('active');
+            
+            // Save to Supabase
+            const success = await saveToSupabase(true);
+            
+            // Hide loading
+            document.getElementById('loadingOverlay').classList.remove('active');
+            
+            if (success) {
+                // Clear localStorage
+                localStorage.removeItem('klyx-discovery-responses');
+                
+                // Move to thank you screen
+                currentScreen = totalScreens - 1;
+                showScreen(currentScreen);
+                updateProgress();
+            } else {
+                alert("Une erreur s'est produite lors de l'enregistrement. Veuillez réessayer.");
+            }
+        }
+    </script>
+</body>
+</html>
