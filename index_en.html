@@ -788,6 +788,8 @@
             
             <input type="text" class="text-input" id="nom" placeholder="Last name">
             
+            <input type="text" class="text-input" id="societe" placeholder="Company name">
+            
             <input type="email" class="text-input" id="email" placeholder="Email">
             
             <span class="phone-input-label">WhatsApp number</span>
@@ -1785,6 +1787,7 @@
                 case 1: // Infos prospect (NOUVEAU)
                     responses.prenom = document.getElementById('prenom')?.value || '';
                     responses.nom = document.getElementById('nom')?.value || '';
+                    responses.societe = document.getElementById('societe')?.value || '';
                     responses.email = document.getElementById('email')?.value || '';
                     responses.country_code = document.getElementById('country-code')?.value || '';
                     responses.whatsapp = document.getElementById('whatsapp')?.value || '';
